@@ -2,13 +2,16 @@ library(polyester)
 library(Biostrings)
 library(GenomicFeatures)
 library(BSgenome.Hsapiens.UCSC.hg19)
+setwd("/home/ruolin/git/strawberry_comp/geuvadis")
 
-gtf.file <- "/home/ruolin/Research/Annotations/hsapiens/gencode.v19.annotation.sqlite"
-txdb <- loadDb(gtf.file)
+##read expression profile
+exp_prof = read.table("data/tx_exp.mat", header=T)
+exp_prof.sorted = exp_prof[with(exp_prof, order(transcript_id)),]
+
+gtf.db <- "/home/ruolin/Research/Annotations/hsapiens/gencode.v19.annotation.sqlite"
+txdb <- loadDb(gtf.db)
 # using the same transcript database (TxDb) as the Geuvadis analysis
 # otherwise you can use a different TxDb, with the line:
-#gtf.file <- "/home/ruolin/Research/Annotations/hsapiens/gencode.v19.annotation.gff3"
-#txdb <- makeTxDbFromGFF(gtf.file)
 
 # make some objects for later
 # the exons of each transcript
@@ -17,29 +20,45 @@ ebt0 <- exonsBy(txdb, by="tx")
 gene.ids <- keys(txdb, keytype="GENEID")
 gene.ids <- gene.ids[gene.ids != ""]
 txdf <- select(txdb, keys=gene.ids, columns=c("TXID","TXCHROM","TXNAME"), keytype="GENEID")
-txdf <- txdf[txdf$TXNAME %in%,]
+txdf.select <- txdf[txdf$TXNAME %in% exp_prof$transcript_id,]
+txdf.select.sorted <- txdf.select[with(txdf.select, order(TXNAME)),]
 
+# how many transcripts per gene?
+tab.tx <- table(txdf.select.sorted$GENEID)
+head(table(tab.tx))
+#can print geneid to txid map
+#txdf.select[, c("GENEID","TXNAME")]
 
+sample_depth = c(71347640, 76531554, 56823810 , 70454210, 85193073, 68079019)
 
-# FASTA annotation
-fasta_file = system.file('extdata', 'chr22.fa', package='polyester')
-fasta = readDNAStringSet(fasta_file)
+sample.tx <- txdf.select.sorted$TXID
+sample.tx.names <- txdf.select.sorted$TXNAME
+# subset the exons by transcript object
+ebt <- ebt0[sample.tx]
+head(sample.tx.names)
+names(ebt) <- sample.tx.names
 
-num_timepoints = 12
-# ~20x coverage ----> reads per transcript = transcriptlength/readlength * 20
-# here all transcripts will have ~equal FPKM
-readspertx = round(20 * width(fasta) / 100)
-length(fasta)
-countmat = matrix(readspertx, nrow=length(fasta), ncol=num_timepoints)
-countmat
-# add spikes in expression at certain timepoints to certain transcripts:
-up_early = c(1,2) 
-up_late = c(3,4)
-countmat[up_early, 2] = 3*countmat[up_early, 2]
-countmat[up_early, 3] = round(1.5*countmat[up_early, 3])
-countmat[up_late, 10] = 6*countmat[up_late, 10]
-countmat[up_late, 11] = round(1.2*countmat[up_late, 11])
+##simulate seq
+dssl <- getSeq(Hsapiens, ebt)
+dna <- unstrsplit(dssl)
+library(Rsamtools)
+dir.create(file.path("simulated_reads"))
+writeXStringSet(dna, file="simulated_reads/transcripts.fa")
 
+txlen = sum(width(ebt))
+fpkmmat = as.matrix(exp_prof.sorted[,-1])
+rownames(fpkmmat) = exp_prof.sorted[,1]
+countmat= fpkmmat %*% diag(sample_depth) * txlen / 1e9
 # simulation call:
-simulate_experiment_countmat(fasta_file, readmat=countmat, outdir='simulated_reads') 
+simulate_experiment_countmat(fasta = "simulated_reads/transcripts.fa", readmat = countmat, outdir='simulated_reads') 
+
+
+fpkm_truth = countmat  %*% diag(1/colSums(countmat)) * (1/txlen) *1e9
+fpkm_truth = cbind(rownames(fpkm_truth), fpkm_truth)
+colnames(fpkm_truth) = colnames(exp_prof.sorted)
+
+count_truth = cbind(rownames(countmat), countmat)
+colnames(count_truth) = colnames(exp_prof.sorted)
+write.table(fpkm_truth, file="simulated_reads/fpkm_truth.mat", quote = FALSE, row.names = F, sep = "\t")
+write.table(count_truth, file="simulated_reads/count_truth.mat", quote = FALSE, row.names = F, sep = "\t")
 
