@@ -1,11 +1,11 @@
-base_dir = "/home/ruolin/git/strawberry_comp/geuvadis"
+base_dir = "/home/ruolin/git/strawberry_comp/geuvadis_3000_frag500"
 setwd(base_dir)
 library(RColorBrewer)
 mycol = brewer.pal(3,  name="Set1")
 
-straw_asmb = read.table(header=F, file="assemb_straw.stats",row.names = 1)
-cuff_asmb = read.table(header=F, file="assemb_cuff.stats",row.names = 1)
-string_asmb = read.table(header=F, file="assemb_string.stats",row.names = 1)
+straw_asmb = read.table(header=F, file="strawberry/assemb_straw.stats",row.names = 1)
+cuff_asmb = read.table(header=F, file="cufflinks/assemb_cuff.stats",row.names = 1)
+string_asmb = read.table(header=F, file="stringtie/assemb_string.stats",row.names = 1)
 
 num_software = 3
 num_row = 6
@@ -124,7 +124,9 @@ strawberry_prop_corr = all_corr(all_strawberry,all_truth, method = "proportion")
 stringtie_prop_corr = all_corr(all_stringtie, all_truth, method = "proportion")
 cufflinks_prop_corr = all_corr(all_cufflinks, all_truth, method = "proportion")
 
-pdf("geuvadis.pdf")
+t.test(unlist(strawberry_sp_corr), unlist(stringtie_sp_corr), paired=T)
+
+pdf("geuvadis.pdf", width=8.5, height=11)
 
 op = par(mfrow= c(3,1),
          mar = c(4,3,0,0.5) + 0.1,
@@ -133,70 +135,35 @@ op = par(mfrow= c(3,1),
 
 
 hist(unlist(stringtie_prop_corr), col=mycol[1], 
-     xlim=c(0.90,1.0), ylim=c(0,5), yaxs = "i", xaxs = "i", 
-     xaxt="n", yaxt="n", xlab="", ylab="", main="", breaks=50)
+     xlim=c(0.40,0.9), ylim=c(0,5), yaxs = "i", xaxs = "i", 
+     xaxt="n", yaxt="n", xlab="", ylab="", main="", breaks=10)
 title( ylab="Frequency", xlab="Proportional correlation", main="", mgp=c(2,0,0), cex.lab=1.2)
 axis(1, lwd=2, tck=0, mgp=c(1,0.5,0), cex.axis=1.2)
 axis(2, lwd=2, tck=0, las=2, mgp=c(1,0.5,0), cex.axis=1.2)
-hist(unlist(strawberry_prop_corr), col=mycol[2], add=T, breaks=30)
-hist(unlist(cufflinks_prop_corr), col=mycol[3], add=T, breaks=15)
+hist(unlist(strawberry_prop_corr), col=mycol[2], add=T, breaks=5)
+hist(unlist(cufflinks_prop_corr), col=mycol[3], add=T, breaks=20)
 legend('topleft',c('StringTie','Strawberry', 'Cufflinks'),
        fill = mycol, bty = 'n', cex=1.4,
        border = NA)
 
 hist(unlist(stringtie_sp_corr), col=mycol[1], 
-     xlim=c(0.9,1), ylim=c(0,5), yaxs = "i", xaxs = "i", 
-     xaxt="n", yaxt="n", xlab="", ylab="", main="", breaks=50)
+     xlim=c(0.82,0.95), ylim=c(0,5), yaxs = "i", xaxs = "i", 
+     xaxt="n", yaxt="n", xlab="", ylab="", main="", breaks=30)
 title( ylab="Frequency", xlab="Spearman correlation", main="", mgp=c(2,0,0), cex.lab=1.2)
 axis(1, lwd=2, tck=0, mgp=c(1,0.5,0), cex.axis=1.2)
 axis(2, lwd=2, tck=0, las=2, mgp=c(1,0.5,0), cex.axis=1.2)
 hist(unlist(strawberry_sp_corr), col=mycol[2], add=T, breaks=30)
-hist(unlist(cufflinks_sp_corr), col=mycol[3], add=T, breaks=5)
+hist(unlist(cufflinks_sp_corr), col=mycol[3], add=T, breaks=30)
 
 
 hist(unlist(stringtie_MARD), col=mycol[1], 
-     xlim=c(0.1, 0.4), ylim=c(0,5), yaxs = "i", xaxs = "i", 
-     xaxt="n", yaxt="n", xlab="", ylab="", main="", breaks=20)
+     xlim=c(0.1, 0.5), ylim=c(0,5), yaxs = "i", xaxs = "i", 
+     xaxt="n", yaxt="n", xlab="", ylab="", main="", breaks=5)
 title( ylab="Frequency", xlab="MARD", main="", mgp=c(2,0,0), cex.lab=1.2)
-axis(1, lwd=2, tck=0, mgp=c(1,0.5,0), cex.axis=1.2, at=c(0,1, 0.2,0.3,0.4))
+axis(1, lwd=2, tck=0, mgp=c(1,0.5,0), cex.axis=1.2, at=c(0,1, 0.2,0.3,0.4,0.5))
 axis(2, lwd=2, tck=0, las=2, mgp=c(1,0.5,0), cex.axis=1.2)
 hist(unlist(strawberry_MARD), col=mycol[2], add=T, breaks=10)
-hist(unlist(cufflinks_MARD), col=mycol[3], add=T, breaks=20)
+hist(unlist(cufflinks_MARD), col=mycol[3], add=T, breaks=10)
 
 par(op)
 dev.off()
-
-
-##############################
-##############################
-##########ASSEMBLY############
-
-##Load all data 
-all_strawberry = lapply(1:6,
-                        function(id){
-                          fname = file.path(base_dir, paste0("strawberry/", id, "/strawberry.stats"))
-                          percent = read.table(fname, skip=10, nrow=6, sep="\t", stringsAsFactors = FALSE)
-                          count = read.table(fname, skip=17, nrow=2, sep="\t", stringsAsFactors = FALSE)
-                          list(percent=percent, count=count)
-                        })
-
-
-
-######
-###DEBUG
-cuff_fp = subset(all_cufflinks[[2]], class_code == "=")$ref_id
-straw_tp = subset(all_strawberry[[2]], class_code == "=")$ref_id
-string_tp = subset(all_stringtie[[2]], class_code == "=")$ref_id
-setdiff(string_tp, straw_tp)
-setdiff(straw_tp, string_tp)
-
-setdiff(cuff_tp, straw_tp)
-setdiff(string_tp, cuff_tp)
-subset(all_strawberry[[1]], ref_id %in% setdiff(string_tp, straw_tp))
-
-subset(all_cufflinks[[1]], ref_id %in% setdiff(straw_tp,cuff_tp))
-subset(all_strawberry[[1]], ref_id %in% setdiff(cuff_tp, straw_tp))
-######
-all_strawberry[[2]]
-x = rgamma(10000, shape=250, rate=500)
-plot(density(x))

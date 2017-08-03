@@ -6,10 +6,11 @@ library(BSgenome.Hsapiens.UCSC.hg19)
 ##read expression profile
 exp_prof = read.table("data/tx_exp.mat", header=T)
 exp_prof.sorted = exp_prof[with(exp_prof, order(transcript_id)),]
-gtf.db <- "/home/ruolin/Research/Annotations/hsapiens/gencode.v19.annotation.sqlite"
+gtf.db <- "Annotations/hsapiens/gencode.v19.annotation.sqlite"
 txdb <- loadDb(gtf.db)
 # using the same transcript database (TxDb) as the Geuvadis analysis
 # otherwise you can use a different TxDb, with the line:
+# txdb <- makeTxDbFromGFF("/path/to/genes.gtf")
 
 # make some objects for later
 # the exons of each transcript
