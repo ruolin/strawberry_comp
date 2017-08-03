@@ -10,13 +10,30 @@ string_asmb = read.table(header=F, file="assemb_string.stats",row.names = 1)
 num_software = 3
 num_row = 6
 num_sample =6
-for (i in 5:6) {
-  i = 6
+for (i in 1:4) {
   collect = matrix(c(rep(2,num_sample), as.numeric(straw_asmb[i,])), byrow=F, ncol=2)
   collect = rbind(collect, matrix(c(rep(3,num_sample), as.numeric(cuff_asmb[i,])), byrow=F, ncol=2) )
   collect = rbind(collect, matrix(c(rep(1,num_sample), as.numeric(string_asmb[i,])), byrow=F, ncol=2) )
   colnames(collect) = c("software", "score")
-  boxplot(score ~ software, data= collect, col = mycol )
+  boxplot(score ~ software, data= collect, col = mycol, names=c("StringTie","Strawberry","Cufflinks"), cex.axis=1.5, cex.lab=1.5)
+  if (i == 1) {
+    title(main="Exon F1")
+  }
+  if (i == 2) {
+    title(main="Intron F1")
+  }
+  if (i == 3) {
+    title(main="Transcript F1")
+  }
+  if (i == 4) {
+    title(main="Loci F1")
+  }
+  if (i == 5) {
+    title(main="Transcript recall")
+  }
+  if (i == 6) {
+    title(main="Transcript precision")
+  }
 }
 
 prop_corr <- function(x,y){

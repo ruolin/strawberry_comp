@@ -3,6 +3,15 @@ import sys
 import argparse
 import re
 
+def F1Score(recall, prec):
+    assert len(recall) == len(prec)
+    f1s = []
+    for i in range(len(recall)):
+        f1 = 2* float(recall[i]) * float(prec[i]) / (float(recall[i]) + float(prec[i]))
+        f1s.append(f1)
+    return (f1s)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
     parser.add_argument("-f", nargs="+", default = [], required=True)
@@ -84,11 +93,16 @@ if __name__ == "__main__":
             tx_sen.append(tx_tp / tx_nref)
             tx_tpp.append(tx_tp / tx_npred)
 
-    print ("EXON_SEN\t{}".format("\t".join([str(i) for i in exon_sen])))
-    print ("EXON_TPP\t{}".format("\t".join([str(i) for i in exon_tpp])))
-    print ("INTRON_SEN\t{}".format("\t".join([str(i) for i in intron_sen])))
-    print ("INTRON_TPP\t{}".format("\t".join([str(i) for i in intron_tpp])))
-    print ("TX_SEN\t{}".format("\t".join([str(i) for i in tx_sen])))
-    print ("TX_TPP\t{}".format("\t".join([str(i) for i in tx_tpp])))
-    print ("LOCI_SEN\t{}".format("\t".join([str(i) for i in loci_sen])))
-    print ("LOCI_TPP\t{}".format("\t".join([str(i) for i in loci_tpp])))
+    
+    print ("EXON_F1\t{}".format("\t".join([str(i) for i in F1Score(exon_sen, exon_tpp)])))
+    print ("INTRON_F1\t{}".format("\t".join([str(i) for i in F1Score(intron_sen, intron_tpp)])))
+    print ("TRANS_F1\t{}".format("\t".join([str(i) for i in F1Score(tx_sen, tx_tpp)])))
+    print ("LOCI_F1\t{}".format("\t".join([str(i) for i in F1Score(loci_sen, loci_tpp)])))
+    #print ("EXON_SEN\t{}".format("\t".join([str(i) for i in exon_sen])))
+    #print ("EXON_TPP\t{}".format("\t".join([str(i) for i in exon_tpp])))
+    #print ("INTRON_SEN\t{}".format("\t".join([str(i) for i in intron_sen])))
+    #print ("INTRON_TPP\t{}".format("\t".join([str(i) for i in intron_tpp])))
+    #print ("TX_SEN\t{}".format("\t".join([str(i) for i in tx_sen])))
+    #print ("TX_TPP\t{}".format("\t".join([str(i) for i in tx_tpp])))
+    #print ("LOCI_SEN\t{}".format("\t".join([str(i) for i in loci_sen])))
+    #print ("LOCI_TPP\t{}".format("\t".join([str(i) for i in loci_tpp])))

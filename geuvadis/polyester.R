@@ -2,12 +2,10 @@ library(polyester)
 library(Biostrings)
 library(GenomicFeatures)
 library(BSgenome.Hsapiens.UCSC.hg19)
-setwd("/home/ruolin/git/strawberry_comp/geuvadis")
 
 ##read expression profile
 exp_prof = read.table("data/tx_exp.mat", header=T)
 exp_prof.sorted = exp_prof[with(exp_prof, order(transcript_id)),]
-
 gtf.db <- "/home/ruolin/Research/Annotations/hsapiens/gencode.v19.annotation.sqlite"
 txdb <- loadDb(gtf.db)
 # using the same transcript database (TxDb) as the Geuvadis analysis
@@ -46,19 +44,19 @@ dir.create(file.path("simulated_reads"))
 writeXStringSet(dna, file="simulated_reads/transcripts.fa")
 
 txlen = sum(width(ebt))
-fpkmmat = as.matrix(exp_prof.sorted[,-1])
-rownames(fpkmmat) = exp_prof.sorted[,1]
+fpkmmat = as.matrix(exp_prof.sorted[,-c(1,2)])
+rownames(fpkmmat) = exp_prof.sorted[,2]
 countmat= fpkmmat %*% diag(sample_depth) * txlen / 1e9
 # simulation call:
-simulate_experiment_countmat(fasta = "simulated_reads/transcripts.fa", readmat = countmat, outdir='simulated_reads') 
+simulate_experiment_countmat(fasta = "simulated_reads/transcripts.fa", readmat = countmat, outdir='simulated_reads', fraglen = 700, readlen = 150) 
 
 
 fpkm_truth = countmat  %*% diag(1/colSums(countmat)) * (1/txlen) *1e9
 fpkm_truth = cbind(rownames(fpkm_truth), fpkm_truth)
-colnames(fpkm_truth) = colnames(exp_prof.sorted)
+colnames(fpkm_truth) = colnames(exp_prof.sorted)[-1]
 
 count_truth = cbind(rownames(countmat), countmat)
-colnames(count_truth) = colnames(exp_prof.sorted)
+colnames(count_truth) = colnames(exp_prof.sorted)[-1]
 write.table(fpkm_truth, file="simulated_reads/fpkm_truth.mat", quote = FALSE, row.names = F, sep = "\t")
 write.table(count_truth, file="simulated_reads/count_truth.mat", quote = FALSE, row.names = F, sep = "\t")
 
